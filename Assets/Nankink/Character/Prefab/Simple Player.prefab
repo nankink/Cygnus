@@ -498,7 +498,6 @@ GameObject:
   - component: {fileID: 1179329643826346241}
   - component: {fileID: 8124192843406547488}
   - component: {fileID: 1780920362548259012}
-  - component: {fileID: 5276252203167663601}
   - component: {fileID: 3131170794380021341}
   - component: {fileID: 8338978832728118106}
   m_Layer: 0
@@ -567,30 +566,7 @@ MonoBehaviour:
   GroundLayers:
     serializedVersion: 2
     m_Bits: 72
-  IsGrabbingSomething: 0
-  GrabbedObject: {fileID: 0}
-  weaponHand: {fileID: 7494533759079274316}
-  weapon: {fileID: 0}
-  AttackTimeout: 0.3
-  attackDamage: 2
   animator: {fileID: 5766018113092052723}
---- !u!114 &5276252203167663601
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2768427878475992745}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ef5775fb13455744ba52db7d224dad5a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pushLayers:
-    serializedVersion: 2
-    m_Bits: 64
-  canPush: 1
-  strength: 3.57
 --- !u!114 &3131170794380021341
 MonoBehaviour:
   m_ObjectHideFlags: 0
