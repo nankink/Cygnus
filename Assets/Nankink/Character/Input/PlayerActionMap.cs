@@ -46,22 +46,22 @@ public partial class @PlayerActionMap : IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""Act"",
-                    ""type"": ""Button"",
+                    ""name"": ""Iai"",
+                    ""type"": ""Value"",
                     ""id"": ""fc358d29-bac0-4766-aab2-ecb38f79cbd7"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """",
-                    ""initialStateCheck"": false
+                    ""initialStateCheck"": true
                 },
                 {
                     ""name"": ""Attack"",
-                    ""type"": ""Button"",
+                    ""type"": ""Value"",
                     ""id"": ""f81b887e-b2d1-4226-9818-a9709ed61314"",
                     ""expectedControlType"": ""Button"",
                     ""processors"": """",
                     ""interactions"": """",
-                    ""initialStateCheck"": false
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -200,11 +200,11 @@ public partial class @PlayerActionMap : IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""14f1692f-d593-44a2-b471-88ca7c1e03e5"",
-                    ""path"": ""<Keyboard>/f"",
+                    ""path"": ""<Mouse>/rightButton"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": ""KeyboardMouse"",
-                    ""action"": ""Act"",
+                    ""action"": ""Iai"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -287,7 +287,7 @@ public partial class @PlayerActionMap : IInputActionCollection2, IDisposable
         m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
         m_Player_Move = m_Player.FindAction("Move", throwIfNotFound: true);
         m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
-        m_Player_Act = m_Player.FindAction("Act", throwIfNotFound: true);
+        m_Player_Iai = m_Player.FindAction("Iai", throwIfNotFound: true);
         m_Player_Attack = m_Player.FindAction("Attack", throwIfNotFound: true);
     }
 
@@ -350,7 +350,7 @@ public partial class @PlayerActionMap : IInputActionCollection2, IDisposable
     private IPlayerActions m_PlayerActionsCallbackInterface;
     private readonly InputAction m_Player_Move;
     private readonly InputAction m_Player_Jump;
-    private readonly InputAction m_Player_Act;
+    private readonly InputAction m_Player_Iai;
     private readonly InputAction m_Player_Attack;
     public struct PlayerActions
     {
@@ -358,7 +358,7 @@ public partial class @PlayerActionMap : IInputActionCollection2, IDisposable
         public PlayerActions(@PlayerActionMap wrapper) { m_Wrapper = wrapper; }
         public InputAction @Move => m_Wrapper.m_Player_Move;
         public InputAction @Jump => m_Wrapper.m_Player_Jump;
-        public InputAction @Act => m_Wrapper.m_Player_Act;
+        public InputAction @Iai => m_Wrapper.m_Player_Iai;
         public InputAction @Attack => m_Wrapper.m_Player_Attack;
         public InputActionMap Get() { return m_Wrapper.m_Player; }
         public void Enable() { Get().Enable(); }
@@ -375,9 +375,9 @@ public partial class @PlayerActionMap : IInputActionCollection2, IDisposable
                 @Jump.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnJump;
                 @Jump.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnJump;
                 @Jump.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnJump;
-                @Act.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnAct;
-                @Act.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnAct;
-                @Act.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnAct;
+                @Iai.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnIai;
+                @Iai.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnIai;
+                @Iai.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnIai;
                 @Attack.started -= m_Wrapper.m_PlayerActionsCallbackInterface.OnAttack;
                 @Attack.performed -= m_Wrapper.m_PlayerActionsCallbackInterface.OnAttack;
                 @Attack.canceled -= m_Wrapper.m_PlayerActionsCallbackInterface.OnAttack;
@@ -391,9 +391,9 @@ public partial class @PlayerActionMap : IInputActionCollection2, IDisposable
                 @Jump.started += instance.OnJump;
                 @Jump.performed += instance.OnJump;
                 @Jump.canceled += instance.OnJump;
-                @Act.started += instance.OnAct;
-                @Act.performed += instance.OnAct;
-                @Act.canceled += instance.OnAct;
+                @Iai.started += instance.OnIai;
+                @Iai.performed += instance.OnIai;
+                @Iai.canceled += instance.OnIai;
                 @Attack.started += instance.OnAttack;
                 @Attack.performed += instance.OnAttack;
                 @Attack.canceled += instance.OnAttack;
@@ -441,7 +441,7 @@ public partial class @PlayerActionMap : IInputActionCollection2, IDisposable
     {
         void OnMove(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
-        void OnAct(InputAction.CallbackContext context);
+        void OnIai(InputAction.CallbackContext context);
         void OnAttack(InputAction.CallbackContext context);
     }
 }

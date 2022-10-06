@@ -1,12 +1,5 @@
 {
   "dependencies": {
-    "com.av.smart-inspector": {
-      "version": "0.8.0-pre.1",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://package.openupm.com"
-    },
     "com.domybest.mybox": {
       "version": "1.7.0",
       "depth": 0,

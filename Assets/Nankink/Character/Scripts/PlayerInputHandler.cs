@@ -1,15 +1,15 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-
+using MyBox;
 namespace Nankink.Controller
 {
     public class PlayerInputHandler : MonoBehaviour
     {
         [Header("Character Input Values")]
-        public Vector2 move;
-        public bool jump;
-        public bool act;
-        public bool attack;
+        [ReadOnly]public Vector2 move;
+        [ReadOnly]public bool jump;
+        [ReadOnly]public bool iai;
+        [ReadOnly]public bool attack;
 
         [Header("Movement Settings")]
         public bool analogMovement;
@@ -26,9 +26,9 @@ namespace Nankink.Controller
         {
             JumpInput(value.isPressed);
         }
-        public void OnAct(InputValue value)
+        public void OnIai(InputValue value)
         {
-            ActInput(value.isPressed);
+            IaiInput(value.isPressed);
         }
         public void OnAttack(InputValue value)
         {
@@ -43,9 +43,9 @@ namespace Nankink.Controller
         {
             jump = newJumpState;
         }
-        public void ActInput(bool newActionState)
+        public void IaiInput(bool newActionState)
         {
-            act = newActionState;
+            iai = newActionState;
         }
         public void AttackInput(bool newAttackState)
         {

@@ -24,22 +24,22 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Act",
-                    "type": "Button",
+                    "name": "Iai",
+                    "type": "Value",
                     "id": "fc358d29-bac0-4766-aab2-ecb38f79cbd7",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 },
                 {
                     "name": "Attack",
-                    "type": "Button",
+                    "type": "Value",
                     "id": "f81b887e-b2d1-4226-9818-a9709ed61314",
                     "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -178,11 +178,11 @@
                 {
                     "name": "",
                     "id": "14f1692f-d593-44a2-b471-88ca7c1e03e5",
-                    "path": "<Keyboard>/f",
+                    "path": "<Mouse>/rightButton",
                     "interactions": "",
                     "processors": "",
                     "groups": "KeyboardMouse",
-                    "action": "Act",
+                    "action": "Iai",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

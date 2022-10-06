@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.av.smart-inspector": "0.8.0-pre.1",
     "com.domybest.mybox": "1.7.0",
     "com.unity.cinemachine": "2.8.9",
     "com.unity.collab-proxy": "1.15.16",
