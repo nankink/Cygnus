@@ -202,6 +202,8 @@ GameObject:
   - component: {fileID: 9220549141638124683}
   - component: {fileID: 726365025509158848}
   - component: {fileID: 1496862978814468167}
+  - component: {fileID: 1023179840}
+  - component: {fileID: 1023179839}
   m_Layer: 0
   m_Name: sword01
   m_TagString: Untagged
@@ -274,6 +276,32 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!136 &1023179840
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 467246299773900611}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  m_Radius: 0.21905166
+  m_Height: 1.1479893
+  m_Direction: 1
+  m_Center: {x: 0.0000009852118, y: -0.41989213, z: -0.000000517934}
+--- !u!114 &1023179839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 467246299773900611}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 983ca02e63157394e9305c860a407b1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &486786040604709973
 GameObject:
   m_ObjectHideFlags: 0
@@ -605,7 +633,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2461408375633516296}
   - component: {fileID: 7137136165916172947}
-  - component: {fileID: 2461408375633516295}
   m_Layer: 0
   m_Name: character01
   m_TagString: Untagged
@@ -620,7 +647,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2461408375633516298}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -650,72 +677,6 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!114 &2461408375633516295
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2461408375633516298}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bb2206f6d53d8a7428d97ac2d00e2342, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  transforms:
-  - {fileID: 2461408375633516296}
-  GUIContents:
-  - m_Text: stand
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: walk
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: walk_battle
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: walk_battle_l
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: walk_battle_r
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: run
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: jump
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: attack01
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: attack02
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: attack03
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: attack04
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: gaurd
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: damage
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: stun
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: die
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: resurrection
-    m_Image: {fileID: 0}
-    m_Tooltip: 
-  - m_Text: win
-    m_Image: {fileID: 0}
-    m_Tooltip: 
 --- !u!1 &2644164801249671444
 GameObject:
   m_ObjectHideFlags: 0
