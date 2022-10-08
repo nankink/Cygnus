@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using MyBox;
 using TMPro;
+using CooldownAPI;
 
 namespace Nankink.Controller
 {
@@ -22,6 +23,7 @@ namespace Nankink.Controller
         public float movementSpeed = 15f;
         public float rotationFactorPerFrame = 20f;
         public LayerMask groundLayer;
+        public float windowToSpecial = 4f;
 
         //
         private Vector3 currentMovement;
@@ -29,11 +31,16 @@ namespace Nankink.Controller
         private bool isMovementPressed = false;
 
         private bool inSpecialPose = false;
+        bool specialSubscribed;
+        bool duringSpecial;
+
         private bool isAttacking = false;
         private bool inAttack = false;
 
+        public float specialCooldownDuration = 1f;
+        Cooldown specialCooldown;
+        Coroutine specialCoroutine;
 
-        #region MONOBEHAVIOUR METHODS
         private void Awake()
         {
             playerInput = new PlayerInputMap();
@@ -42,6 +49,8 @@ namespace Nankink.Controller
             mainCam = Camera.main;
             controller = GetComponent<CharacterController>();
             animator = GetComponentInChildren<Animator>();
+
+            specialCooldown = new Cooldown(specialCooldownDuration);
         }
         private void Start()
         {
@@ -52,7 +61,6 @@ namespace Nankink.Controller
                 InputAssigner();
             }
         }
-
         private void OnEnable()
         {
             playerInput.Enable();
@@ -61,7 +69,6 @@ namespace Nankink.Controller
         {
             playerInput.Disable();
         }
-
         private void Update()
         {
             Movement();
@@ -74,16 +81,15 @@ namespace Nankink.Controller
 
             GravityHandler();
         }
-        #endregion 
 
-        void Movement()
+        private void Movement()
         {
-            if (!inSpecialPose && !isAttacking)
+            if (!inSpecialPose && !isAttacking && !inAttack)
             {
                 controller.Move(currentMovement * Time.deltaTime * movementSpeed);
             }
         }
-        void Rotation()
+        private void Rotation()
         {
             Vector3 posToLookAt = new Vector3(currentMovement.x, 0, currentMovement.z);
             Quaternion currentRotation = transform.rotation;
@@ -94,14 +100,15 @@ namespace Nankink.Controller
                 transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, rotationFactorPerFrame * Time.deltaTime);
             }
         }
-        void Attack()
+
+        private void Attack()
         {
-            if(isAttacking && !inAttack)
+            if (isAttacking && !inAttack)
             {
                 StartCoroutine(AttackSubroutine());
             }
         }
-        IEnumerator AttackSubroutine()
+        private IEnumerator AttackSubroutine()
         {
             inAttack = true;
             Debug.Log("Attack once");
@@ -109,25 +116,63 @@ namespace Nankink.Controller
             inAttack = false;
         }
 
-        void Special()
+        private void Special()
         {
-            if (inSpecialPose)
+            if (inSpecialPose && !duringSpecial && !specialCooldown.IsActive)
             {
-                DisplayText("Iai pose");
-
-                Quaternion currentRotation = transform.rotation;
-                Quaternion targetRotation = Quaternion.LookRotation(GetMousePositionInWorld());
-                transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, rotationFactorPerFrame * Time.deltaTime);
+                specialCoroutine = StartCoroutine(SpecialPose());
             }
             else
             {
                 DisplayText(" ");
             }
         }
-
-        void moveAnimation()
+        private IEnumerator SpecialPose()
         {
-            if (isMovementPressed && !inSpecialPose)
+            float timer = 0;
+            duringSpecial = true;
+
+            playerInput.CharacterControls.Special.canceled += ExecuteSpecialAttack;
+            specialSubscribed = true;
+            while (timer < windowToSpecial)
+            {
+                DisplayText("Charging");
+
+                Quaternion currentRotation = transform.rotation;
+                Quaternion targetRotation = Quaternion.LookRotation(GetMousePositionInWorld());
+                transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, rotationFactorPerFrame * Time.deltaTime);
+                timer += Time.deltaTime;
+                yield return null;
+            }
+
+            if (specialSubscribed)
+            {
+                playerInput.CharacterControls.Special.canceled -= ExecuteSpecialAttack;
+                specialSubscribed = false;
+            }
+
+            duringSpecial = false;
+            DisplayText("");
+
+            specialCooldown.Activate();
+        }
+        private void ExecuteSpecialAttack(InputAction.CallbackContext context)
+        {
+            StopCoroutine(specialCoroutine);
+            DisplayText("");
+            duringSpecial = false;
+
+            Debug.LogError("Katchau");
+
+            playerInput.CharacterControls.Special.canceled -= ExecuteSpecialAttack;
+            specialSubscribed = false;
+
+            specialCooldown.Activate();
+        }
+
+        private void moveAnimation()
+        {
+            if (isMovementPressed && !inSpecialPose && !inAttack)
             {
                 animator.SetBool("isMoving", true);
             }
@@ -137,7 +182,7 @@ namespace Nankink.Controller
             }
 
         }
-        void GravityHandler()
+        private void GravityHandler()
         {
             if (controller.isGrounded)
             {
@@ -149,8 +194,7 @@ namespace Nankink.Controller
             }
         }
 
-        #region Inputs
-        void InputAssigner()
+        private void InputAssigner()
         {
             playerInput.CharacterControls.Move.started += onMoveInput;
             playerInput.CharacterControls.Move.performed += onMoveInput;
@@ -162,7 +206,7 @@ namespace Nankink.Controller
             playerInput.CharacterControls.Special.started += onSpecialInput;
             playerInput.CharacterControls.Special.canceled += onSpecialInput;
         }
-        void onMoveInput(InputAction.CallbackContext context)
+        private void onMoveInput(InputAction.CallbackContext context)
         {
             inputDirection = context.ReadValue<Vector2>();
             currentMovement.x = inputDirection.x;
@@ -171,25 +215,24 @@ namespace Nankink.Controller
             currentMovement = Quaternion.Euler(0, mainCam.transform.eulerAngles.y, 0) * currentMovement;
             isMovementPressed = inputDirection.x != 0 || inputDirection.y != 0;
         }
-        void onAttackInput(InputAction.CallbackContext context)
+        private void onAttackInput(InputAction.CallbackContext context)
         {
             isAttacking = context.ReadValueAsButton();
             if (isAttacking) Debug.Log("Attacking");
         }
-        void onSpecialInput(InputAction.CallbackContext context)
+        private void onSpecialInput(InputAction.CallbackContext context)
         {
             inSpecialPose = context.ReadValueAsButton();
         }
-        #endregion
 
-        void DisplayText(string message)
+        private void DisplayText(string message)
         {
             if (debug_SpecialState != null)
             {
                 debug_SpecialState.text = message;
             }
         }
-        Vector3 GetMousePositionInWorld()
+        private Vector3 GetMousePositionInWorld()
         {
             Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
             if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayer))
