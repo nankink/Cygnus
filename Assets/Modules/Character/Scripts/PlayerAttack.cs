@@ -45,5 +45,12 @@ namespace Nankink.Controller
                 swordCollider.enabled = false;
             }
         }
+        private void OnTriggerEnter(Collider other)
+        {
+            if(other.tag != "Player" && (other.gameObject.layer != LayerMask.NameToLayer("Ground")))
+            {
+                Debug.Log("BATATACHAN");
+            }
+        }
     }
 }

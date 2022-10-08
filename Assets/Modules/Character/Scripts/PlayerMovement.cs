@@ -24,12 +24,15 @@ namespace Nankink.Controller
         public float rotationFactorPerFrame = 20f;
         public LayerMask groundLayer;
         public float windowToSpecial = 4f;
+        public float dashSpeed = 30f;
+        public float timeInDash = 0.2f;
 
         //
         private Vector3 currentMovement;
         private Vector2 inputDirection;
         private bool isMovementPressed = false;
 
+        public Collider specialCollider;
         private bool inSpecialPose = false;
         bool specialSubscribed;
         bool duringSpecial;
@@ -48,6 +51,8 @@ namespace Nankink.Controller
 
             mainCam = Camera.main;
             controller = GetComponent<CharacterController>();
+            controller.detectCollisions = false;
+
             animator = GetComponentInChildren<Animator>();
 
             specialCooldown = new Cooldown(specialCooldownDuration);
@@ -84,7 +89,7 @@ namespace Nankink.Controller
 
         private void Movement()
         {
-            if (!inSpecialPose && !isAttacking && !inAttack)
+            if (!inSpecialPose && !isAttacking && !inAttack && !duringSpecial)
             {
                 controller.Move(currentMovement * Time.deltaTime * movementSpeed);
             }
@@ -94,7 +99,7 @@ namespace Nankink.Controller
             Vector3 posToLookAt = new Vector3(currentMovement.x, 0, currentMovement.z);
             Quaternion currentRotation = transform.rotation;
 
-            if (isMovementPressed && !inSpecialPose && !isAttacking)
+            if (isMovementPressed && !inSpecialPose && !isAttacking && !duringSpecial)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(posToLookAt);
                 transform.rotation = Quaternion.Slerp(currentRotation, targetRotation, rotationFactorPerFrame * Time.deltaTime);
@@ -121,6 +126,10 @@ namespace Nankink.Controller
             if (inSpecialPose && !duringSpecial && !specialCooldown.IsActive)
             {
                 specialCoroutine = StartCoroutine(SpecialPose());
+            }
+            else if (specialCooldown.IsActive)
+            {
+                DisplayText("Cooldown");
             }
             else
             {
@@ -151,7 +160,6 @@ namespace Nankink.Controller
                 specialSubscribed = false;
             }
 
-            duringSpecial = false;
             DisplayText("");
 
             specialCooldown.Activate();
@@ -160,14 +168,25 @@ namespace Nankink.Controller
         {
             StopCoroutine(specialCoroutine);
             DisplayText("");
-            duringSpecial = false;
 
-            Debug.LogError("Katchau");
-
+            StartCoroutine(Dash());
+        }
+        IEnumerator Dash()
+        {
+            specialCollider.isTrigger = true;
             playerInput.CharacterControls.Special.canceled -= ExecuteSpecialAttack;
             specialSubscribed = false;
 
+            float timer = 0;
+            while (timer < timeInDash)
+            {
+                controller.Move(transform.forward * dashSpeed * Time.deltaTime);
+                yield return null;
+                timer += Time.deltaTime;
+            }
             specialCooldown.Activate();
+            duringSpecial = false;
+            specialCollider.isTrigger = false;
         }
 
         private void moveAnimation()
@@ -190,7 +209,7 @@ namespace Nankink.Controller
             }
             else
             {
-                currentMovement.y += -9.8f;
+                currentMovement.y += -0.4f;
             }
         }
 
