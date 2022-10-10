@@ -1,291 +1,250 @@
-using UnityEngine;
-using System;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.InputSystem;
 using MyBox;
 using TMPro;
+using CooldownAPI;
 
 namespace Nankink.Controller
 {
+    [RequireComponent(typeof(PlayerInputHandler))]
     [RequireComponent(typeof(CharacterController))]
     public class PlayerController : MonoBehaviour
     {
-//         #region VARIABLES
-//         [Header("Movement")]
-//         public float MovementSpeed = 2f;
-//         public float SpeedChangeRate = 10f;
-//         [Range(0f, 0.3f)] public float RotationSmoothTime = 0.12f;
-//         bool canMove = true;
+        // References
+        private PlayerInputHandler inputHandler;
+        private CharacterController controller;
+        private Animator animator;
+        private Camera mainCam;
 
-//         [Space(10)]
-//         [Header("Jump & Gravity")]
-//         public float JumpHeight = 1.2f;
-//         public float JumpTimeout = 0.5f;
-//         public float FallTimeout = 0.15f;
-//         public float Gravity = -15f;
+        // Debug
+        public TextMeshProUGUI debug_SpecialState;
 
-//         [Space(10)]
-//         [Header("Ground")]
-//         [ReadOnly] public bool Grounded;
-//         public float GroundedOffset = -0.14f;
-//         public float GroundedRadius = 0.28f;
-//         public LayerMask GroundLayers;
+        // Parameters
+        public float movementSpeed = 15f;
+        public float rotationFactorPerFrame = 20f;
+        public LayerMask groundLayer;
+        public float windowToSpecial = 4f;
+        public float dashSpeed = 30f;
+        public float timeInDash = 0.2f;
 
-//         // player 
-//         private float m_speed;
-//         private float m_targetRotation;
-//         private float m_rotationVelocity;
-//         private float m_verticalVelocity;
-//         private float m_terminalVelocity = 53f;
+        // Properties
+        bool MovingInput => inputHandler.MovementPressed;
+        bool AttackingInput => inputHandler.Attacking;
+        bool SpecialMoveInput => inputHandler.SpecialMove;
 
-//         // timeout deltatime
-//         private float m_jumpTimeoutDelta;
-//         private float m_fallTimeoutDelta;
-//         private float m_attackTimeoutDelta = 0f;
+        //
+        private Vector3 currentMovement;
 
-//         // Iai
-//         private float maxTimeInIai = 5f;
-//         private bool inIaiStance = false;
-//         bool iaiInCooldown = false;
-//         float iaiCooldown = 0f;
-//         float maxIaicd = 1f;
+        public Collider specialCollider;
+        bool specialSubscribed;
+        bool duringSpecial;
 
-//         // References
-//         CharacterController controller;
-//         public Animator animator;
-//         Camera cam;
+        bool canAttack;
 
-//         public TextMeshProUGUI debugText;
-//         public SkinnedMeshRenderer meshRenderer;
+        public float specialCooldownDuration = 1f;
+        Cooldown specialCooldown;
+        Coroutine specialCoroutine;
 
-//         private Vector3 inputDirection;
-//         bool showGizmo = false;
-//         public float dashSpeed = 30f;
+        private void Awake()
+        {
+            mainCam = Camera.main;
+            controller = GetComponent<CharacterController>();
+            controller.detectCollisions = false;
 
-//         private bool IsCurrentDeviceMouse
-//         {
-//             get
-//             {
-// #if ENABLE_INPUT_SYSTEM
-//                 return playerInput.currentControlScheme == "KeyboardMouse";
-// #else
-//                 return false;
-// #endif
-//             }
-//         }
-//         #endregion
+            inputHandler = GetComponent<PlayerInputHandler>();
+            inputHandler.InitializeInputHandler();
+            inputHandler.InputMap.Attack.canceled += CanAttack;
 
-//         float h, v;
-//         bool jump;
+            animator = GetComponentInChildren<Animator>();
 
-//         #region MONOBEHAVIOUR METHODS
-//         void Start()
-//         {
-//             controller = GetComponent<CharacterController>();
-//             if (animator != null) animator = GetComponentInChildren<Animator>();
-//             cam = Camera.main;
+            specialCooldown = new Cooldown(specialCooldownDuration);
+        }
+        private void OnEnable()
+        {
+            inputHandler.EnableControls(true);
+        }
+        private void OnDisable()
+        {
+            inputHandler.EnableControls(false);
+        }
+        private void Update()
+        {
+            ConvertMovementInput();
 
-//             m_jumpTimeoutDelta = JumpTimeout;
-//             m_fallTimeoutDelta = FallTimeout;
-//         }
+            Movement();
 
-//         void Update()
-//         {
-//             h = Input.GetAxis("Horizontal");
-//             v = Input.GetAxis("Vertical");
-//             Move(h,v);
+            Rotation();
 
-//             if(Input.GetKeyDown(KeyCode.Space))
-//             {
-//                 jump = true;
-//             }
-//             JumpAndGravity();
-//             GroundCheck();
+            Attack();
+            Special();
 
-//             if (iaiInCooldown)
-//             {
-//                 if (iaiCooldown < maxIaicd)
-//                 {
-//                     iaiCooldown += Time.deltaTime;
-//                 }
-//                 else
-//                 {
-//                     iaiInCooldown = false;
-//                     iaiCooldown = 0f;
-//                     debugText.text = "Ready!";
-//                 }
-//             }
-//             else
-//             {
-//                 IaiCheck();
-//             }
-//         }
-//         #endregion
+            GravityHandler();
+        }
 
-//         void Move(float h, float v)
-//         {
-//             if (!canMove) return;
+        #region Movement
+        private void Movement()
+        {
+            if (VerifyIfAbleToMove() && MovingInput)
+            {
+                animator.SetBool("isMoving", true);
+                controller.Move(currentMovement * Time.deltaTime * movementSpeed);
+            }
+            else
+            {
+                animator.SetBool("isMoving", false);
+            }
+        }
+        private void Rotation()
+        {
+            if (MovingInput && VerifyIfAbleToMove())
+            {
+                RotatePlayerTo(false, target: currentMovement);
+            }
+        }
+        #endregion
 
-//             Vector2 move = new Vector2(h, v).normalized;
-//             bool analogMovement = false; 
+        private void Attack()
+        {
+            if (AttackingInput && canAttack)
+            {
+                StartCoroutine(AttackSubroutine());
+            }
+        }
+        private IEnumerator AttackSubroutine()
+        {
+            Debug.Log("Attacked");
+            canAttack = false;
 
-//             float targetSpeed = MovementSpeed;
-//             if (move == Vector2.zero) targetSpeed = 0f;
+            animator.SetBool("isAttacking", true);
+            yield return new WaitForSeconds(0.2f);
+            animator.SetBool("isAttacking", false);
+        }
+        internal void CanAttack(InputAction.CallbackContext context)
+        {
+            canAttack = true;
+        }
 
-//             float currentHorizontalSpeed = new Vector3(controller.velocity.x, 0f, controller.velocity.z).magnitude;
-//             float speedOffset = 0.1f;
-//             float inputMagnitude = analogMovement ? move.magnitude : 1f;
+        private void Special()
+        {
+            if (SpecialMoveInput && !duringSpecial && !specialCooldown.IsActive)
+            {
+                specialCoroutine = StartCoroutine(SpecialPose());
+            }
+            else if (specialCooldown.IsActive)
+            {
+                DisplayText("Cooldown"); // Debug
+            }
+            else
+            {
+                DisplayText(" "); // Debug
+            }
+        }
+        private IEnumerator SpecialPose()
+        {
+            Debug.Log("Entered special");
 
-//             if (currentHorizontalSpeed < targetSpeed - speedOffset || currentHorizontalSpeed > targetSpeed + speedOffset)
-//             {
-//                 m_speed = Mathf.Lerp(currentHorizontalSpeed, targetSpeed * inputMagnitude, Time.deltaTime * SpeedChangeRate);
-//                 m_speed = Mathf.Round(m_speed * 1000f) / 1000f;
-//             }
-//             else
-//             {
-//                 m_speed = targetSpeed;
-//             }
+            float timer = 0;
+            duringSpecial = true;
 
-//             Vector3 inputDirection = new Vector3(move.x, 0f, move.y).normalized;
-//             animator.SetFloat("Movement", inputDirection.magnitude);
+            inputHandler.InputMap.Special.canceled += ExecuteSpecialAttack;
+            specialSubscribed = true;
+            while (timer < windowToSpecial)
+            {
+                DisplayText("Charging"); // Debug
+                RotatePlayerTo(true);
 
-//             // Rotation
-//             if (move != Vector2.zero)
-//             {
-//                 m_targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg + cam.transform.eulerAngles.y;
-//                 float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, m_targetRotation, ref m_rotationVelocity, RotationSmoothTime);
+                timer += Time.deltaTime;
+                yield return null;
+            }
 
-//                 transform.rotation = Quaternion.Euler(transform.rotation.x, rotation, transform.rotation.z);
-//             }
+            if (specialSubscribed)
+            {
+                inputHandler.InputMap.Special.canceled -= ExecuteSpecialAttack;
+                specialSubscribed = false;
+            }
 
-//             // Set vector movement based on player's rotation
-//             Vector3 targetDirection = Quaternion.Euler(0f, m_targetRotation, 0f) * Vector3.forward;
+            DisplayText("");
 
-//             // Move player
-//             controller.Move(targetDirection.normalized * (m_speed * Time.deltaTime) + new Vector3(0f, m_verticalVelocity, 0f) * Time.deltaTime);
-//         }
-//         void IaiCheck()
-//         {
-//             if (Input.GetMouseButtonDown(1) && !inIaiStance)
-//             {
-//                 StartCoroutine(IaiRoutine());
-//             }
-//         }
-//         IEnumerator IaiRoutine()
-//         {
-//             inIaiStance = true;
-//             canMove = false;
+            specialCooldown.Activate();
+        }
+        private void ExecuteSpecialAttack(InputAction.CallbackContext context)
+        {
+            StopCoroutine(specialCoroutine);
 
-//             float timer = 0;
-//             while (timer < maxTimeInIai)
-//             {
-//                 debugText.text = "Holding";
+            Debug.Log("Released special button");
+            DisplayText(""); // Debug
 
-//                 // Look at mouse
-//                 showGizmo = true;
-//                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(GetMousePositionInRelationToPlayer()), 1);
+            StartCoroutine(Dash());
+        }
+        IEnumerator Dash()
+        {
+            specialCollider.isTrigger = true;
+            inputHandler.InputMap.Special.canceled -= ExecuteSpecialAttack;
+            specialSubscribed = false;
 
-//                 if (!Input.GetMouseButtonDown(1))
-//                 {
-//                     debugText.text = "Released. IAI!";
-//                     showGizmo = false;
+            float timer = 0;
+            while (timer < timeInDash)
+            {
+                controller.Move(transform.forward * dashSpeed * Time.deltaTime);
+                yield return null;
+                timer += Time.deltaTime;
+            }
+            specialCooldown.Activate();
+            duringSpecial = false;
+            specialCollider.isTrigger = false;
+        }
 
-//                     StartCoroutine(TurnMeRed());
-//                     StartCoroutine(IaiDash());
+        private void DisplayText(string message)
+        {
+            if (debug_SpecialState != null)
+            {
+                debug_SpecialState.text = message;
+            }
+        }
+        private Vector3 GetMousePositionInWorld()
+        {
+            Ray ray = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+            if (Physics.Raycast(ray, out RaycastHit hit, 1000f, groundLayer))
+            {
+                Vector3 direction = (hit.point - transform.position).normalized;
+                return direction;
+            }
+            else return Vector3.zero;
+        }
+        private void GravityHandler()
+        {
+            if (controller.isGrounded)
+            {
+                currentMovement.y = -.05f;
+            }
+            else
+            {
+                currentMovement.y += -0.4f;
+            }
+        }
+        private void RotatePlayerTo(bool useMouse, Vector3? target = null)
+        {
+            Vector3 posToLookAt = Vector3.zero;
+            if (target != null)
+            {
+                posToLookAt = new Vector3(target.Value.x, 0, target.Value.z);
+            }
+            Quaternion currentRot = transform.rotation;
+            Quaternion targetRot = useMouse ? Quaternion.LookRotation(GetMousePositionInWorld()) : Quaternion.LookRotation(posToLookAt);
+            transform.rotation = Quaternion.Slerp(currentRot, targetRot, rotationFactorPerFrame * Time.deltaTime);
 
-//                     break;
-//                 }
-//                 else
-//                 {
-//                     timer += Time.deltaTime;
-//                     yield return null;
-//                 }
-//             }
 
-//             debugText.text = "Entered cooldown";
-//             canMove = true;
-//             inIaiStance = false;
-//             iaiInCooldown = true;
-//             showGizmo = false;
-//         }
-
-//         IEnumerator TurnMeRed()
-//         {
-//             meshRenderer.material.color = Color.red;
-//             yield return new WaitForSeconds(1f);
-//             meshRenderer.material.color = Color.white;
-//         }
-//         IEnumerator IaiDash()
-//         {
-//             float dashTime = 0.25f;
-//             float startTime = Time.time;
-//             while(Time.time < startTime + dashTime)
-//             {
-//                 controller.Move(transform.forward * dashSpeed * Time.deltaTime);
-//                 yield return null;
-//             }
-//         }
-
-//         Vector3 GetMousePositionInRelationToPlayer()
-//         {
-//             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-//             if (Physics.Raycast(ray: ray, hitInfo: out RaycastHit hit, 1000f, GroundLayers))
-//             {
-//                 inputDirection = (hit.point - transform.position).normalized;
-//                 return inputDirection;
-//             }
-//             else
-//             {
-//                 return Vector3.zero;
-//             }
-//         }
-
-//         void JumpAndGravity()
-//         {
-//             if (Grounded)
-//             {
-//                 animator.SetBool("Jump", true);
-
-//                 m_fallTimeoutDelta = FallTimeout;
-
-//                 if (m_verticalVelocity < 0f) m_verticalVelocity = -2f;
-
-//                 if (jump && m_jumpTimeoutDelta <= 0f)
-//                 {
-//                     m_verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
-//                 }
-//                 if (m_jumpTimeoutDelta >= 0f)
-//                 {
-//                     m_jumpTimeoutDelta -= Time.deltaTime;
-//                 }
-//             }
-//             else
-//             {
-//                 m_jumpTimeoutDelta = JumpTimeout;
-//                 if (m_jumpTimeoutDelta >= 0f)
-//                 {
-//                     m_jumpTimeoutDelta -= Time.deltaTime;
-//                 }
-
-//                 jump = false;
-//             }
-
-//             if (m_verticalVelocity < m_terminalVelocity)
-//             {
-//                 m_verticalVelocity += Gravity * Time.deltaTime;
-//             }
-//         }
-//         void GroundCheck()
-//         {
-//             Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y - GroundedOffset, transform.position.z);
-//             Grounded = Physics.CheckSphere(spherePosition, GroundedRadius, GroundLayers, QueryTriggerInteraction.Ignore);
-//             if (Grounded) animator.SetBool("Jump", false);
-//         }
-
-//         private void OnDrawGizmos()
-//         {
-//                 Gizmos.color = Color.green;
-//                 Gizmos.DrawWireSphere(transform.position + (transform.forward * 2f), 0.5f);
-//         }
-
+        }
+        bool VerifyIfAbleToMove()
+        {
+            return (!SpecialMoveInput && !AttackingInput && !canAttack && !duringSpecial);
+        }
+        private void ConvertMovementInput()
+        {
+            Vector3 mov = new Vector3(inputHandler.InputDirection.x, 0, inputHandler.InputDirection.y);
+            currentMovement = Quaternion.Euler(0, mainCam.transform.eulerAngles.y, 0) * mov;
+        }
     }
 }
